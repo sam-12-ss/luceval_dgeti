@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Asistencia - Plataforma Docente</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--accent:#ffa502;--bg:#f5f7fa;--card:#ffffff}
+  html,body{height:100%;margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,var(--bg),#cfe6f9);color:#2f3640}
+  header{display:flex;justify-content:center;gap:14px;background:#1e272e;padding:12px 8px;position:sticky;top:0;z-index:80}
+  header button{background:rgba(255,255,255,0.08);border:0;color:#dcdde1;padding:8px 14px;border-radius:10px;cursor:pointer}
+  header button.active, header button:hover{background:var(--accent);color:#fff}
+  .wrap{max-width:1200px;margin:18px auto;padding:12px;width:calc(100% - 32px)}
+  
+  /* 🔹 NUEVO DISEÑO SUPERIOR 🔹 */
+  .info-card{
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+    border-left:5px solid var(--accent);
+  }
+  .info-card .info-left h2{margin:0;font-size:1.3rem;color:#1e272e;font-weight:700}
+  .info-card .info-left p{margin:4px 0 0 0;color:#555;font-size:0.95rem}
+  .info-card .info-right{display:flex;flex-wrap:wrap;gap:8px}
+  .info-card button{background:#1e272e;color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.9rem}
+  .info-card button:hover{background:var(--accent)}
+  
+  /* tabla */
+  .table-wrap{margin-top:12px;background:var(--card);border-radius:12px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:700px}
+  th,td{padding:10px;border:1px solid #e6e9ee;text-align:center;font-size:0.95rem}
+  th{background:#1e272e;color:white;position:relative}
+  .date-input{width:120px;border-radius:6px;border:1px solid #ccc;padding:6px}
+  .del-date{background:transparent;border:0;color:#fff;margin-left:6px;cursor:pointer}
+  td.cell{cursor:pointer;min-width:70px;vertical-align:middle}
+  td.A{background:#2ecc71;color:white}
+  td.R{background:#f1c40f;color:white}
+  td.F{background:#e74c3c;color:white}
+  .percent{font-weight:700}
+  @media(max-width:900px){table{min-width:900px}}
+</style>
+</head>
+<body>
+<header>
+  <button class="tab-btn" data-tab="evaluacion">Evaluación</button>
+  <button class="tab-btn active" data-tab="asistencia">Asistencia</button>
+  <button class="tab-btn" data-tab="resultados">Resultados</button>
+</header>
+
+<div class="wrap">
+  <div class="info-card">
+    <div class="info-left">
+      <h2><span id="materia">Materia</span></h2>
+      <p>Grado: <span id="grupo">Grupo</span> · Carrera: <span id="carrera">Carrera</span></p>
+    </div>
+    <div class="info-right">
+      <input id="dateInput" type="date" />
+      <button id="btnAddDate">➕ Agregar día</button>
+      <button id="btnExportExcel">📊 Exportar Excel</button>
+      <button id="btnExportPDF">📄 Exportar PDF</button>
+      <button id="btnGuardarDB">💾 Guardar en BD</button>
+
+    </div>
+  </div>
+
+  <div class="table-wrap" id="tableWrap">
+    <table id="attendanceTable" role="table" aria-label="Tabla de asistencia">
+      <thead><tr id="theadRow"><th>Alumno</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const matricula = params.get('matricula') || '12345';
+const grupoText = params.get('grado') || '5° A';
+const carreraText = params.get('carrera') || 'Programación';
+const materiaText = params.get('materia') || 'Implementa Software';
+
+document.getElementById('grupo').textContent = grupoText;
+document.getElementById('carrera').textContent = carreraText;
+document.getElementById('materia').textContent = materiaText;
+
+const KEY = `asistencia_${matricula}_${encodeURIComponent(grupoText)}_${encodeURIComponent(materiaText)}`;
+
+/* --- SINCRONIZACIÓN CON EVALUACION --- */
+function loadAlumnosFromEvaluacion(){
+  try{
+    const evalKey = `evaluacion_${matricula}_${grupoText}_${materiaText}`;
+    const raw = localStorage.getItem(evalKey);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    if(parsed && Array.isArray(parsed.alumnos)){
+      return parsed.alumnos.map(a => a.nombre || '');
+    }
+    return [];
+  }catch(e){return [];}
+}
+
+/* estructura principal */
+let state = { fechas: [], alumnos: [] };
+
+/* carga y guarda */
+function saveState(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function loadState(){
+  const raw = localStorage.getItem(KEY);
+  if(!raw) return false;
+  try{
+    const parsed = JSON.parse(raw);
+    state.fechas = Array.isArray(parsed.fechas) ? parsed.fechas : [];
+    state.alumnos = Array.isArray(parsed.alumnos) ? parsed.alumnos : [];
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- SINCRONIZAR CON CAMBIOS DE EVALUACION --- */
+function syncWithEvaluacion(){
+  const alumnosEval = loadAlumnosFromEvaluacion();
+  const currentNames = state.alumnos.map(a=>a.nombre);
+  
+  // Agregar nuevos
+  alumnosEval.forEach(nombre=>{
+    if(!currentNames.includes(nombre)){
+      state.alumnos.push({nombre, asistencia: state.fechas.map(()=> '')});
+    }
+  });
+  
+  // Eliminar los que ya no están
+  state.alumnos = state.alumnos.filter(a=> alumnosEval.includes(a.nombre));
+  saveState();
+}
+
+/* render */
+const theadRow=document.getElementById('theadRow');
+const tbody=document.getElementById('tbody');
+
+function renderHeader(){
+  theadRow.innerHTML='';
+  const th0=document.createElement('th');
+  th0.textContent='Alumno';
+  theadRow.appendChild(th0);
+
+  state.fechas.forEach((f,idx)=>{
+    const th=document.createElement('th');
+    const input=document.createElement('input');
+    input.type='date';
+    input.value=f;
+    input.className='date-input';
+    input.onchange=()=>{state.fechas[idx]=input.value;saveState();renderHeader();};
+    th.appendChild(input);
+    const del=document.createElement('button');
+    del.textContent='❌';
+    del.className='del-date';
+    del.onclick=()=>{state.fechas.splice(idx,1);state.alumnos.forEach(a=>a.asistencia.splice(idx,1));saveState();renderAll();};
+    th.appendChild(del);
+    theadRow.appendChild(th);
+  });
+  const thPct=document.createElement('th');thPct.textContent='% Asistencia';theadRow.appendChild(thPct);
+}
+
+function renderRows(){
+  tbody.innerHTML='';
+  state.alumnos.forEach((alumno,r)=>{
+    const tr=document.createElement('tr');
+    const tdName=document.createElement('td');tdName.textContent=alumno.nombre;tr.appendChild(tdName);
+    state.fechas.forEach((_,c)=>{
+      const td=document.createElement('td');
+      td.className='cell';
+      td.dataset.row=r;td.dataset.col=c;
+      const val=alumno.asistencia[c]||'';if(val){td.textContent=val;td.classList.add(val);}
+      td.onclick=()=>setActiveCell(td);
+      tr.appendChild(td);
+    });
+    const tdPct=document.createElement('td');tdPct.className='percent';tdPct.textContent='0%';tr.appendChild(tdPct);
+    tbody.appendChild(tr);
+  });
+  recalcPercentages();
+}
+
+function recalcPercentages(){
+  tbody.querySelectorAll('tr').forEach((tr,r)=>{
+    const celdas=tr.querySelectorAll('td.cell');
+    let A=0,R=0;
+    celdas.forEach(td=>{
+      if(td.textContent==='A')A++;
+      else if(td.textContent==='R')R++;
+    });
+    const faltasR=Math.floor(R/2);
+    const total=celdas.length+faltasR;
+    const pct=total===0?0:Math.round((A/total)*100);
+    tr.querySelector('.percent').textContent=pct+'%';
+  });
+}
+
+let activeCell=null;
+function setActiveCell(td){
+  if(activeCell)activeCell.style.outline='';
+  activeCell=td;
+  td.style.outline=`3px solid var(--accent)`;
+}
+document.addEventListener('keydown',e=>{
+  if(!activeCell)return;
+  const k=e.key.toUpperCase();
+  if(['A','R','F'].includes(k)){
+    const r=+activeCell.dataset.row,c=+activeCell.dataset.col;
+    state.alumnos[r].asistencia[c]=k;
+    activeCell.textContent=k;
+    activeCell.className='cell '+k;
+    saveState();recalcPercentages();
+    const next=document.querySelector(`td.cell[data-row="${r+1}"][data-col="${c}"]`);
+    if(next)setActiveCell(next);
+  }
+});
+
+/* botones */
+document.getElementById('btnAddDate').onclick=()=>{
+  const d=document.getElementById('dateInput').value;
+  if(!d){alert('Selecciona una fecha');return;}
+  if(state.fechas.includes(d)){alert('La fecha ya existe');return;}
+  state.fechas.push(d);
+  state.alumnos.forEach(a=>a.asistencia.push(''));
+  saveState();renderAll();
+};
+document.getElementById('btnExportExcel').onclick=()=>{
+  const tbl=document.getElementById('attendanceTable');
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb,ws,'Asistencia');
+  XLSX.writeFile(wb,`Asistencia_${materiaText}.xlsx`);
+};
+document.getElementById('btnExportPDF').onclick=async()=>{
+  const cont=document.getElementById('tableWrap');
+  const canvas=await html2canvas(cont,{scale:2,useCORS:true});
+  const img=canvas.toDataURL('image/png');
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  const w=pdf.internal.pageSize.getWidth()-20;
+  const h=(canvas.height*w)/canvas.width;
+  pdf.addImage(img,'PNG',10,10,w,h);
+  pdf.save(`Asistencia_${materiaText}.pdf`);
+};
+
+function renderAll(){renderHeader();renderRows();}
+
+/* Inicialización */
+(function boot(){
+  const loaded=loadState();
+  if(!loaded){
+    const alumnosEval=loadAlumnosFromEvaluacion();
+    state.fechas=[];
+    state.alumnos=alumnosEval.map(n=>({nombre:n,asistencia:[]}));
+    saveState();
+  }else{
+    syncWithEvaluacion(); // 🔹 sincroniza al cargar
+  }
+  renderAll();
+
+  // 🔹 Re-sincroniza cada 3 segundos por si cambian alumnos en evaluación
+  setInterval(()=>{
+    const before=JSON.stringify(state.alumnos.map(a=>a.nombre));
+    syncWithEvaluacion();
+    const after=JSON.stringify(state.alumnos.map(a=>a.nombre));
+    if(before!==after) renderAll();
+  },3000);
+})();
+
+/* Tabs */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    const q=window.location.search;
+    if(tab==='evaluacion')location.href=`evaluacion.html${q}`;
+    if(tab==='asistencia')location.href=`asistencia.html${q}`;
+    if(tab==='resultados')location.href=`resultados.html${q}`;
+  });
+});
+
+
+document.getElementById('btnGuardarDB').onclick = async () => {
+  try {
+    const response = await fetch('guardar_asistencia.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        materia: materiaText,
+        grupo: grupoText,
+        carrera: carreraText,
+        alumnos: state.alumnos,
+        fechas: state.fechas
+      })
+    });
+    const result = await response.json();
+    if (result.success) {
+      alert('✅ Asistencia guardada correctamente en la base de datos.');
+    } else {
+      alert('⚠️ Error al guardar: ' + result.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error de conexión con el servidor.');
+  }
+};
+
+</script>
+</body>
+</html>
+
+
+
+

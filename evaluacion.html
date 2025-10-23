@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Plataforma Docente Mejorada</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BODY ===== */
+body { font-family: 'Inter', sans-serif; margin:0; background: linear-gradient(135deg,#f5f7fa,#c3cfe2); color: #2f3640; transition: background 0.5s; }
+* { box-sizing: border-box; }
+
+/* ===== HEADER ===== */
+header { display:flex; justify-content:center; gap:25px; background: #1e272e; padding:15px 0; color:white; font-weight:600; font-size:1.1rem; position:sticky; top:0; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+header button { background: rgba(255,255,255,0.1); border:none; color:#dcdde1; cursor:pointer; padding:8px 18px; border-radius:12px; font-weight:500; transition:0.3s; position:relative; overflow:hidden;}
+header button::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:0; background: #ffa502; transition:0.3s; z-index:-1; border-radius:0 0 12px 12px;}
+header button:hover::after, header button.active::after { height:100%; }
+header button:hover, header button.active { color:white; }
+
+/* ===== SIDEBAR ===== */
+#sidebar { position:fixed; top:60px; left:-280px; width:280px; height:calc(100% - 60px); background:#2f3640; color:white; overflow-y:auto; transition:left 0.4s ease, box-shadow 0.4s; z-index:1000; padding:20px 0; border-radius:0 20px 20px 0;}
+#sidebar.active { left:0; box-shadow:5px 0 20px rgba(0,0,0,0.25);}
+#sidebar a { display:flex; align-items:center; gap:15px; color:white; padding:12px 20px; text-decoration:none; border-radius:15px; margin:6px 12px; transition:0.3s; font-weight:500; background: rgba(255,255,255,0.05);}
+#sidebar a:hover { background: rgba(255,255,255,0.2); transform: translateX(5px);}
+#sidebar a img { width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid #ffa502; }
+
+#toggleSidebar { position:fixed; top:15px; left:15px; font-size:28px; background:#ffa502; color:white; padding:8px 14px; border:none; border-radius:12px; cursor:pointer; z-index:1100; box-shadow:0 2px 12px rgba(0,0,0,0.3); transition:0.3s;}
+#toggleSidebar:hover { background:#e1a400; transform: scale(1.05); }
+
+
+.parcial-group {
+  margin-bottom: 10px;
+}
+
+.parcial-header {
+  font-weight: 700;
+  padding: 12px 20px;
+  color: #ffa502;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin: 8px 12px;
+  transition: 0.3s;
+}
+.parcial-header:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.parcial-header::after {
+  content: '▼';
+  font-size: 0.9rem;
+  transition: transform 0.3s;
+}
+.parcial-header.active::after {
+  transform: rotate(-180deg);
+}
+
+.materias-list {
+  display: none;
+  padding-left: 10px;
+}
+.materias-list.active {
+  display: block;
+}
+
+/* ===== CONTENT ===== */
+.content { margin:90px 20px 20px 20px; transition:all 0.5s; }
+.tab-page { display:none; opacity:0; transform: translateY(25px); transition:0.5s; }
+.tab-page.active { display:block; opacity:1; transform: translateY(0); }
+
+/* ===== INFO CARD ===== */
+.info { background: linear-gradient(145deg,#ffffff,#dff1ff); padding:30px; border-radius:25px; box-shadow:0 15px 35px rgba(0,0,0,0.15); margin-bottom:25px; position:relative; overflow:hidden; transition: all 0.5s; }
+.info::after { content:''; position:absolute; top:-50px; right:-50px; width:200px; height:200px; background: url('https://images.unsplash.com/photo-1531497865142-5c5ee2997a12?auto=format&fit=crop&w=150&q=80') no-repeat center/cover; opacity:0.1; border-radius:50%; transform: rotate(25deg); }
+.info h2 { margin-top:0; font-size:2rem; color:#1e272e; }
+.info p { margin:5px 0; color:#2f3640; }
+
+/* ===== METODOS & PONDERACIONES ===== */
+.metodos, .ponderaciones { display:flex; flex-wrap:wrap; gap:18px; margin-top:20px;}
+.metodos label, .ponderaciones label { font-weight:600; padding:12px 20px; border-radius:18px; cursor:pointer; background:#f1f2f6; display:flex; align-items:center; transition:0.3s; }
+.metodos input[type="checkbox"] { margin-right:10px; accent-color:#1e272e; }
+.ponderaciones input[type="number"] { width:80px; text-align:center; border-radius:12px; border:1px solid #ccc; padding:6px; font-weight:500;}
+.ponderaciones input[disabled] { background:#e0e0e0; opacity:0.6; cursor:not-allowed; }
+
+/* ===== TABLA ===== */
+table { width:100%; border-collapse:collapse; margin-top:25px; background: rgba(255,255,255,0.98); box-shadow:0 15px 30px rgba(0,0,0,0.12); border-radius:20px; display:block; overflow-x:auto; transition:all 0.5s; }
+th, td { border:1px solid #dcdde1; padding:14px; text-align:center; min-width:90px; font-size:0.95rem; transition: background 0.3s; }
+th { background:#1e272e; color:white; font-weight:600; }
+td input[type="number"] { width:90%; padding:8px; border-radius:10px; border:1px solid #ccc; text-align:center; font-size:0.95rem; transition:0.3s; }
+td input[type="text"] { width:auto; min-width:150px; padding:8px; border-radius:10px; border:1px solid #ccc; text-align:left; font-size:0.95rem; transition:0.3s; }
+
+/* ===== BOTONES ===== */
+button { padding:10px 18px; margin:5px; background:#1e272e; border:none; color:white; cursor:pointer; border-radius:20px; font-weight:600; transition:all 0.3s; }
+button:hover { background:#353b48; transform: scale(1.05);}
+.eliminar { background:#ff4d4d; }
+.eliminar:hover { background:#e84118; }
+
+/* ===== CARD ASISTENCIA & RESULTADOS ===== */
+.card { background:#ffffff; border-radius:25px; box-shadow:0 15px 30px rgba(0,0,0,0.12); padding:30px; margin-bottom:25px; transition:all 0.4s;}
+.card h3 { margin-top:0; color:#1e272e; font-size:1.6rem;}
+.card p { font-size:1rem; color:#2f3640; }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){ header{flex-direction:column; gap:10px;} .content{margin:120px 10px 20px 10px;} #sidebar{width:220px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="tab-btn active" data-tab="evaluacion">Evaluación</button>
+  <button class="tab-btn" data-tab="asistencia">Asistencia</button>
+  <button class="tab-btn" data-tab="resultados">Resultados</button>
+</header>
+
+<div id="sidebar">
+  <div style="text-align:center; margin-bottom:15px;">
+  <button id="btnRegresar" style="
+    background:#ffa502;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:18px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.3s;
+    box-shadow:0 2px 10px rgba(0,0,0,0.25);
+  ">⏪ Regresar al inicio</button>
+</div>
+  <div id="sidebar-links"></div>
+</div>
+<button id="toggleSidebar">☰</button>
+
+<div class="content">
+
+<!-- ===== EVALUACION ===== -->
+<div id="evaluacion" class="tab-page active">
+  <div class="info">
+    <h2>Evaluación - <span id="materia"></span></h2>
+    <p><strong>Profesor:</strong> <span id="profesor"></span></p>
+    <p><strong>Grupo:</strong> <span id="grupo"></span> | <strong>Carrera:</strong> <span id="carrera"></span></p>
+
+    <div class="metodos">
+      <label><input type="checkbox" id="chkActividades" checked> Actividades</label>
+      <label><input type="checkbox" id="chkProyecto"> Proyecto</label>
+      <label><input type="checkbox" id="chkExamen"> Examen</label>
+    </div>
+
+    <div class="ponderaciones">
+      <label>Actividades %: <input type="number" id="pondActividades" min="0" max="100" value="50"></label>
+      <label>Proyecto %: <input type="number" id="pondProyecto" min="0" max="100" value="30" disabled></label>
+      <label>Examen %: <input type="number" id="pondExamen" min="0" max="100" value="20" disabled></label>
+    </div>
+
+    <div style="margin-top:15px;">
+      <label style="font-weight:600;">Subir CSV: </label>
+      <input type="file" id="fileCSV" accept=".csv">
+    </div>
+
+  </div>
+
+  <table id="tablaEvaluacion">
+    <thead><tr><th>Alumno</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div>
+    <button id="btnAgregarAlumno">➕ Agregar Alumno</button>
+    <button id="btnAgregarActividad">➕ Agregar Actividad</button>
+    <button id="btnEliminarActividad" class="eliminar">🗑 Eliminar Actividad</button>
+  </div>
+</div>
+
+<!-- ===== ASISTENCIA ===== -->
+<div id="asistencia" class="tab-page">
+  <div class="card"><h3>Registro de Asistencia</h3><p>Aquí se registrará la asistencia de los alumnos de manera futura.</p></div>
+</div>
+
+<!-- ===== RESULTADOS ===== -->
+<div id="resultados" class="tab-page">
+  <div class="card"><h3>Resultados Generales</h3><p>Promedios finales de todos los alumnos según evaluaciones seleccionadas.</p></div>
+</div>
+
+</div>
+
+<script>
+// ===== PESTAÑAS =====
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.dataset.tab === 'asistencia'){
+      window.location.href = `asistencia.html?matricula=${encodeURIComponent(matricula)}&grado=${encodeURIComponent(grupo)}&carrera=${encodeURIComponent(carrera)}&materia=${encodeURIComponent(materia)}`;
+      return;
+    }
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== PROFESORES Y MATERIAS =====
+const profesorMaterias={
+  '12345':{nombre:'Marysol Gutierrez Solares', img:'https://i.pravatar.cc/100?img=5', materias:[
+    {grupo:'5° A', carrera:'Programación', materia:'Implementa Software'},
+    {grupo:'5° A', carrera:'Programación', materia:'Codifica Software'},
+    {grupo:'3° A', carrera:'Programación', materia:'Métodos'}
+  ]},
+  'ABC12':{nombre:'Juan Pérez', img:'https://i.pravatar.cc/100?img=12', materias:[
+    {grupo:'4° B', carrera:'Contabilidad', materia:'Contabilidad I'},
+    {grupo:'4° B', carrera:'Contabilidad', materia:'Matemáticas Financieras'}
+  ]}
+};
+
+const params=new URLSearchParams(window.location.search);
+let matricula=params.get('matricula')||'12345';
+let grupo=params.get('grado')||'5° A';
+let carrera=params.get('carrera')||'Programación';
+let materia=params.get('materia')||'Implementa Software';
+
+document.getElementById('grupo').textContent=grupo;
+document.getElementById('carrera').textContent=carrera;
+document.getElementById('materia').textContent=materia;
+document.getElementById('profesor').textContent=profesorMaterias[matricula]?.nombre || 'Profesor Ejemplo';
+
+// ===== SIDEBAR =====
+const sidebar=document.getElementById('sidebar');
+const sidebarLinks=document.getElementById('sidebar-links');
+const toggleSidebar=document.getElementById('toggleSidebar');
+toggleSidebar.addEventListener('click',()=>sidebar.classList.toggle('active'));
+document.addEventListener('click', e=>{if(!sidebar.contains(e.target)&&e.target!==toggleSidebar) sidebar.classList.remove('active');});
+
+function cargarMateriasSidebar() {
+  sidebarLinks.innerHTML = '';
+  const prof = profesorMaterias[matricula];
+  const parciales = ['Primer Parcial', 'Segundo Parcial', 'Tercer Parcial'];
+
+  if (prof && prof.materias.length > 0) {
+    parciales.forEach((parcialNombre) => {
+      // Contenedor de cada parcial
+      const parcialDiv = document.createElement('div');
+      parcialDiv.className = 'parcial-group';
+
+      // Título colapsable
+      const header = document.createElement('div');
+      header.className = 'parcial-header';
+      header.textContent = parcialNombre;
+      parcialDiv.appendChild(header);
+
+      // Contenedor de materias
+      const materiasDiv = document.createElement('div');
+      materiasDiv.className = 'materias-list';
+
+      prof.materias.forEach((m) => {
+        if (m.grupo !== grupo) return; // Solo materias del grupo
+
+        const link = document.createElement('a');
+        const img = document.createElement('img');
+        img.src = prof.img;
+        const span = document.createElement('span');
+        span.textContent = m.materia;
+
+        link.appendChild(img);
+        link.appendChild(span);
+
+        // Si es la materia actual, márcala activa y colócala al principio
+        if (m.materia === materia) {
+          link.classList.add('active');
+          materiasDiv.prepend(link);
+        } else {
+          materiasDiv.appendChild(link);
+        }
+
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+
+          // Intercambiar la materia actual por la seleccionada
+          const anteriorMateria = materia;
+          materia = m.materia;
+
+          // Actualizar visualmente
+          document.getElementById('materia').textContent = materia;
+
+          // Actualizar menú: se quita la actual y se agrega la anterior
+          prof.materias = prof.materias.map(mat => {
+            if (mat.materia === anteriorMateria) return { ...mat }; 
+            return mat;
+          });
+
+          cargarMateriasSidebar(); // recargar lista actualizada
+
+          // Redirigir con los parámetros nuevos
+          const nuevaURL = `?matricula=${matricula}&grado=${encodeURIComponent(m.grupo)}&carrera=${encodeURIComponent(m.carrera)}&materia=${encodeURIComponent(m.materia)}&parcial=${encodeURIComponent(parcialNombre)}`;
+          window.location.href = nuevaURL;
+        });
+      });
+
+      parcialDiv.appendChild(materiasDiv);
+      sidebarLinks.appendChild(parcialDiv);
+
+      // Expandir/cerrar materias al hacer clic en el título
+      header.addEventListener('click', () => {
+        header.classList.toggle('active');
+        materiasDiv.classList.toggle('active');
+      });
+    });
+  } else {
+    const link = document.createElement('a');
+    link.textContent = 'No hay materias registradas';
+    link.href = '#';
+    sidebarLinks.appendChild(link);
+  }
+}
+
+
+cargarMateriasSidebar();
+
+// ===== EVALUACION DINAMICA =====
+const tabla=document.getElementById('tablaEvaluacion');
+const thead=tabla.querySelector('thead tr');
+const tbody=tabla.querySelector('tbody');
+
+let actividadesCount=3;
+const metodos={ Actividades:true, Proyecto:false, Examen:false };
+const checkboxes={ Actividades:document.getElementById('chkActividades'), Proyecto:document.getElementById('chkProyecto'), Examen:document.getElementById('chkExamen') };
+const ponderaciones={ Actividades:document.getElementById('pondActividades'), Proyecto:document.getElementById('pondProyecto'), Examen:document.getElementById('pondExamen') };
+
+function getStorageKey(){ return `evaluacion_${matricula}_${grupo}_${materia}`; }
+
+function crearCabecera(){
+  thead.innerHTML='<th>Alumno</th>';
+  if(metodos.Actividades){for(let i=0;i<actividadesCount;i++){const th=document.createElement('th');th.textContent=`Actividad ${i+1}`;thead.appendChild(th);}}
+  if(metodos.Proyecto) thead.innerHTML+='<th>Proyecto</th>';
+  if(metodos.Examen) thead.innerHTML+='<th>Examen</th>';
+  thead.innerHTML+='<th>Promedio</th><th>Acciones</th>';
+}
+
+function crearCeldaNota(){
+  const td=document.createElement('td');
+  const input=document.createElement('input');
+  input.type='number'; input.min=0; input.max=10;
+  input.addEventListener('input', calcularPromedios);
+  td.appendChild(input);
+  return td;
+}
+
+function crearFilaAlumno(nombre=''){
+  const fila=document.createElement('tr');
+  const tdNombre=document.createElement('td');
+  const inputNombre=document.createElement('input');
+  inputNombre.type='text'; inputNombre.value=nombre;
+  tdNombre.appendChild(inputNombre);
+  fila.appendChild(tdNombre);
+
+  if(metodos.Actividades){ for(let i=0;i<actividadesCount;i++) fila.appendChild(crearCeldaNota()); }
+  if(metodos.Proyecto) fila.appendChild(crearCeldaNota());
+  if(metodos.Examen) fila.appendChild(crearCeldaNota());
+
+  const tdProm=document.createElement('td'); tdProm.textContent='0'; fila.appendChild(tdProm);
+
+  const tdAcc=document.createElement('td');
+  const btn=document.createElement('button');
+  btn.textContent='🗑'; btn.classList.add('eliminar');
+  btn.onclick=()=>{ fila.remove(); guardarDatos(); };
+  tdAcc.appendChild(btn); fila.appendChild(tdAcc);
+
+  tbody.appendChild(fila);
+
+  ajustarAnchoInput(inputNombre);
+}
+
+function ajustarAnchoInput(input){
+  const tmpSpan = document.createElement('span');
+  tmpSpan.style.visibility = 'hidden';
+  tmpSpan.style.whiteSpace = 'pre';
+  tmpSpan.style.font = window.getComputedStyle(input).font;
+  tmpSpan.textContent = input.value || input.placeholder || "Nombre";
+  document.body.appendChild(tmpSpan);
+  input.style.width = (tmpSpan.offsetWidth + 20) + 'px';
+  document.body.removeChild(tmpSpan);
+}
+
+tbody.addEventListener('input', e => {
+  if(e.target.type === 'text') ajustarAnchoInput(e.target);
+});
+
+function calcularPromedios(){
+  tbody.querySelectorAll('tr').forEach(fila=>{
+    const inputs=fila.querySelectorAll('input[type="number"]');
+    let idx=0, suma=0, totalP=0;
+    if(metodos.Actividades){
+      const actVals=Array.from(inputs).slice(idx,idx+actividadesCount).map(i=>parseFloat(i.value)||0);
+      idx+=actividadesCount;
+      suma+=actVals.reduce((a,b)=>a+b)/actVals.length*(ponderaciones.Actividades.value/100);
+      totalP+=parseFloat(ponderaciones.Actividades.value)||0;
+    }
+    if(metodos.Proyecto){
+      const val=parseFloat(inputs[idx].value)||0;
+      suma+=val*(ponderaciones.Proyecto.value/100);
+      totalP+=parseFloat(ponderaciones.Proyecto.value)||0; idx++;
+    }
+    if(metodos.Examen){
+      const val=parseFloat(inputs[idx].value)||0;
+      suma+=val*(ponderaciones.Examen.value/100);
+      totalP+=parseFloat(ponderaciones.Examen.value)||0; idx++;
+    }
+    const promTd=fila.querySelectorAll('td')[fila.querySelectorAll('td').length-2]; promTd.textContent=suma.toFixed(2);
+  });
+  guardarDatos();
+}
+
+
+// ===== ENVÍO AL SERVIDOR =====
+function guardarEnServidor(){
+  const datos = {
+    materia,
+    grupo,
+    alumnos: Array.from(tbody.querySelectorAll('tr')).map(fila => {
+      return {
+        nombre: fila.querySelector('input[type="text"]').value,
+        notas: Array.from(fila.querySelectorAll('input[type="number"]')).map(i=>i.value)
+      };
+    })
+  };
+
+  fetch('guardar_datos.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos)
+  })
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+}
+
+// ===== GUARDAR DATOS LOCAL + SERVIDOR =====
+function guardarDatos(){
+  const datos={ 
+    actividadesCount, 
+    metodos, 
+    ponderaciones: {
+      Actividades: parseFloat(ponderaciones.Actividades.value)||0,
+      Proyecto: parseFloat(ponderaciones.Proyecto.value)||0,
+      Examen: parseFloat(ponderaciones.Examen.value)||0
+    },
+    alumnos:[]
+  };
+  tbody.querySelectorAll('tr').forEach(fila=>{
+    const nombre=fila.querySelector('input[type="text"]').value;
+    const notas=Array.from(fila.querySelectorAll('input[type="number"]')).map(i=>i.value);
+    datos.alumnos.push({ nombre, notas });
+  });
+  localStorage.setItem(getStorageKey(),JSON.stringify(datos));
+
+  guardarEnServidor(); // ✅ ahora sí llamamos a la función definida
+}
+
+
+
+function cargarDatos(){
+  const guardado=localStorage.getItem(getStorageKey());
+  if(guardado){
+    const datos=JSON.parse(guardado);
+    actividadesCount=datos.actividadesCount;
+    Object.assign(metodos,datos.metodos);
+    if(datos.ponderaciones){
+      ponderaciones.Actividades.value=datos.ponderaciones.Actividades;
+      ponderaciones.Proyecto.value=datos.ponderaciones.Proyecto;
+      ponderaciones.Examen.value=datos.ponderaciones.Examen;
+    }
+    actualizarCheckboxes();
+    crearCabecera();
+    tbody.innerHTML='';
+    datos.alumnos.forEach(al=>{
+      crearFilaAlumno(al.nombre);
+      const inputs=tbody.lastChild.querySelectorAll('input[type="number"]');
+      al.notas.forEach((v,i)=>{ if(inputs[i]) inputs[i].value=v; });
+    });
+    calcularPromedios();
+  } else { crearCabecera(); }
+}
+
+function actualizarCheckboxes(){
+  for(let m in metodos){
+    checkboxes[m].checked=metodos[m];
+    ponderaciones[m].disabled=!metodos[m];
+  }
+}
+
+for(let m in checkboxes){
+  checkboxes[m].addEventListener('change', ()=>{
+    metodos[m]=checkboxes[m].checked;
+    ponderaciones[m].disabled=!checkboxes[m].checked;
+    const alumnos=guardarTemporal();
+    crearCabecera(); tbody.innerHTML='';
+    alumnos.forEach(al=>restaurarFila(al));
+    calcularPromedios();
+  });
+}
+
+function guardarTemporal(){
+  return Array.from(tbody.querySelectorAll('tr')).map(fila=>{
+    return { nombre:fila.querySelector('input[type="text"]').value, notas:Array.from(fila.querySelectorAll('input[type="number"]')).map(i=>i.value) };
+  });
+}
+
+function restaurarFila(al){
+  crearFilaAlumno(al.nombre);
+  const inputs=tbody.lastChild.querySelectorAll('input[type="number"]');
+  al.notas.forEach((v,i)=>{ if(inputs[i]) inputs[i].value=v; });
+}
+
+document.getElementById('btnAgregarAlumno').onclick=()=>{ crearFilaAlumno(); guardarDatos(); };
+document.getElementById('btnAgregarActividad').onclick=()=>{ actividadesCount++; const alumnos=guardarTemporal(); crearCabecera(); tbody.innerHTML=''; alumnos.forEach(al=>restaurarFila(al)); calcularPromedios(); };
+document.getElementById('btnEliminarActividad').onclick=()=>{ if(actividadesCount>0){ actividadesCount--; const alumnos=guardarTemporal(); crearCabecera(); tbody.innerHTML=''; alumnos.forEach(al=>restaurarFila(al)); calcularPromedios(); }};
+
+// 🔹 Guardar automáticamente al cambiar ponderaciones
+for(let m in ponderaciones){ ponderaciones[m].addEventListener('input', calcularPromedios); }
+
+cargarDatos();
+
+// ===== CARGAR CSV =====
+document.getElementById('fileCSV').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event){
+    const text = event.target.result;
+    const lines = text.split(/\r?\n/).filter(l=>l.trim()!=='');
+
+    const nombres = lines.map(l=>l.split(',')[0].trim());
+    tbody.innerHTML='';
+    nombres.forEach((nombre,i)=>{
+      if(nombre.toLowerCase()!=='nombre'){
+        crearFilaAlumno(nombre);
+      }
+    });
+    calcularPromedios();
+  }
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

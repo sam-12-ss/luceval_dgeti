@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resultados - Plataforma Docente</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#ffa502;--bg:#f5f7fa;--card:#ffffff}
+html,body{height:100%;margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,var(--bg),#cfe6f9);color:#2f3640}
+header{display:flex;justify-content:center;gap:14px;background:#1e272e;padding:12px 8px;position:sticky;top:0;z-index:80}
+header button{background:rgba(255,255,255,0.08);border:0;color:#dcdde1;padding:8px 14px;border-radius:10px;cursor:pointer}
+header button.active, header button:hover{background:var(--accent);color:#fff}
+.wrap{max-width:1200px;margin:18px auto;padding:12px;width:calc(100% - 32px)}
+.card{background:var(--card);border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:16px 20px;margin-bottom:16px;}
+.card h3{margin:0 0 10px 0;color:#1e272e;}
+.table-wrap{margin-top:12px;background:var(--card);border-radius:12px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:10px;border:1px solid #e6e9ee;text-align:center;font-size:0.95rem}
+th{background:#1e272e;color:white;position:relative}
+.percent{font-weight:700}
+@media(max-width:900px){table{min-width:900px}}
+</style>
+</head>
+<body>
+<header>
+  <button class="tab-btn" data-tab="evaluacion">Evaluación</button>
+  <button class="tab-btn" data-tab="asistencia">Asistencia</button>
+  <button class="tab-btn active" data-tab="resultados">Resultados</button>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h3>Resultados Generales</h3>
+    <p>Promedios de evaluación y porcentaje de asistencia de los alumnos.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th>Alumno</th>
+          <th>Promedio Evaluación</th>
+          <th>% Asistencia</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// parámetros
+const params = new URLSearchParams(window.location.search);
+const matricula = params.get('matricula') || '12345';
+const grupo = params.get('grado') || '5° A';
+const materia = params.get('materia') || 'Implementa Software';
+
+// keys localStorage
+const evalKey = `evaluacion_${matricula}_${grupo}_${materia}`;
+const asisKey = `asistencia_${matricula}_${encodeURIComponent(grupo)}_${encodeURIComponent(materia)}`;
+
+
+// obtener alumnos y promedios de evaluacion
+function getEvaluacionData(){
+  const raw = localStorage.getItem(evalKey);
+  if(!raw) return [];
+  const parsed = JSON.parse(raw);
+  if(!parsed.alumnos) return [];
+  return parsed.alumnos.map(a => {
+    const notas = a.notas.map(n => parseFloat(n)||0);
+    const promedio = notas.length ? (notas.reduce((a,b)=>a+b)/notas.length).toFixed(2) : '0.00';
+    return { nombre: a.nombre, promedio };
+  });
+}
+
+// obtener porcentaje de asistencia
+function getAsistenciaData(alumnos){
+  const raw = localStorage.getItem(asisKey);
+  if(!raw) return alumnos.map(a=>({nombre:a.nombre, asistencia:'0%'}));
+  const parsed = JSON.parse(raw);
+  return alumnos.map(a=>{
+    const alum = parsed.alumnos.find(al => al.nombre === a.nombre);
+    if(!alum) return { nombre:a.nombre, asistencia:'0%' };
+    const total = alum.asistencia.length;
+    const asistencias = alum.asistencia.filter(v=>'ARF'.includes(v.toUpperCase()) && v.toUpperCase() === 'A').length;
+    const retardos = alum.asistencia.filter(v=>'ARF'.includes(v.toUpperCase()) && v.toUpperCase() === 'R').length;
+    const faltas = alum.asistencia.filter(v=>v.toUpperCase() === 'F').length + Math.floor(retardos/2);
+    const pct = total ? Math.round((asistencias/(total + Math.floor(retardos/2)))*100) : 0;
+    return { nombre:a.nombre, asistencia: pct+'%' };
+  });
+}
+
+function renderTable(){
+  const tbody = document.querySelector('#resultTable tbody');
+  tbody.innerHTML='';
+  const evalData = getEvaluacionData();
+  const asisData = getAsistenciaData(evalData);
+  evalData.forEach(e=>{
+    const fila = document.createElement('tr');
+    const tdNombre = document.createElement('td'); tdNombre.textContent = e.nombre;
+    const tdProm = document.createElement('td'); tdProm.textContent = e.promedio;
+    const tdAsis = document.createElement('td');
+    const a = asisData.find(a=>a.nombre===e.nombre);
+    tdAsis.textContent = a ? a.asistencia : '0%';
+    fila.appendChild(tdNombre);
+    fila.appendChild(tdProm);
+    fila.appendChild(tdAsis);
+    tbody.appendChild(fila);
+  });
+}
+
+renderTable();
+
+// pestañas
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    const paramsStr=`?matricula=${encodeURIComponent(matricula)}&grado=${encodeURIComponent(grupo)}&materia=${encodeURIComponent(materia)}`;
+    if(tab==='evaluacion') window.location.href='evaluacion.html'+paramsStr;
+    else if(tab==='asistencia') window.location.href='asistencia.html'+paramsStr;
+    else if(tab==='resultados') window.location.href='resultados.html'+paramsStr;
+  });
+});
+</script>
+</body>
+</html>

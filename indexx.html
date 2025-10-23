@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>LUCEVAL - Iniciar Sesión</title>
+    <style>
+        /* ===== VARIABLES DE COLOR ===== */
+        :root {
+            --primary-color: rgba(128, 0, 32, 0.9);
+            --primary-translucent: rgba(128, 0, 32, 0.25);
+            --bg-body: #f0f0f0;
+            --bg-container: #ffffff;
+            --text-color: #333;
+            --input-border: #ccc;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .dark-mode {
+            --primary-color: rgba(188, 50, 80, 0.9);
+            --primary-translucent: rgba(188, 50, 80, 0.4);
+            --bg-body: #121212;
+            --bg-container: #1e1e1e;
+            --text-color: #f5f5f5;
+            --input-border: #555;
+            --shadow-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== FONDO GENERAL ===== */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: url('fondo.png') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+
+        /* Capa translúcida elegante sobre el fondo */
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(128, 0, 32, 0.65),
+                rgba(0, 0, 0, 0.6)
+            );
+            backdrop-filter: blur(4px);
+            z-index: -1;
+        }
+
+        /* ===== BANNERS ===== */
+        .banner-large {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background-color: var(--primary-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 26px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .banner-large img {
+            height: 90px;
+            margin-right: 15px;
+        }
+
+        .banner-small {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(128, 0, 32, 0.75);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 18px;
+            z-index: 999;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        .main-container {
+            display: flex;
+            background: var(--bg-container);
+            color: var(--text-color);
+            border-radius: 18px;
+            box-shadow: 0 8px 25px var(--shadow-color);
+            max-width: 900px;
+            width: 90%;
+            overflow: hidden;
+            margin-top: 140px;
+            z-index: 1;
+            position: relative;
+            backdrop-filter: blur(6px);
+        }
+
+        /* ===== BOTÓN TEMA ===== */
+        #themeToggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            z-index: 2;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        #themeToggle:hover {
+            color: #4e0018;
+        }
+
+        .dark-mode #themeToggle {
+            color: var(--primary-color);
+        }
+
+        /* ===== LOGIN ===== */
+        .login-box {
+            flex: 1;
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-box h2 {
+            text-align: center;
+            font-size: 30px;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(128, 0, 32, 0.2);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            font-size: 15px;
+            background-color: var(--bg-container);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 6px rgba(128, 0, 32, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background: var(--primary-color);
+            color: #fff;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            opacity: 0.95;
+        }
+
+        .actions {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .actions a {
+            text-decoration: none;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+
+        .recover-section {
+            text-align: center;
+        }
+
+        /* ===== ILUSTRACIÓN ===== */
+        .illustration {
+            flex: 1;
+            background: url('fondoo1.png') no-repeat center center;
+            background-size: contain;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== CARGANDO ===== */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 6px solid #ddd;
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .loader p {
+            font-size: 20px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .illustration {
+                height: 200px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <!-- Fondo con overlay -->
+    <div class="background-overlay"></div>
+
+    <div class="banner-large">
+        <img src="fondoo1.png" alt="Logo">
+        LUCEVAL
+    </div>
+    <div class="banner-small">
+        EVALUACIÓN ÁGIL · EDUCACIÓN EFICIENTE
+    </div>
+
+    <div id="loader" class="loader">
+        <div class="spinner"></div>
+        <p>Ingresando a LUCEVAL...</p>
+    </div>
+
+    <div class="main-container">
+        <button id="themeToggle" aria-label="Cambiar Tema">
+            <i class="fas fa-moon"></i>
+        </button>
+
+        <div class="login-box">
+            <section class="login-section" id="loginSection">
+                <form id="loginForm">
+                    <h2>BIENVENIDO</h2>
+
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" placeholder="usuario@correo.com" required>
+                    <small id="emailError" style="color:red;"></small>
+
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+                    <small id="passwordError"></small>
+
+                    <div class="actions">
+                        <a href="#" id="forgotPassword">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <button type="submit">Iniciar Sesión</button>
+                </form>
+            </section>
+
+            <section class="recover-section" id="recoverSection" style="display:none;">
+                <h2>Recuperar Cuenta</h2>
+                <p>Ingresa tu correo para recuperar tu cuenta:</p>
+                <input type="email" id="recoverEmail" placeholder="Correo registrado" required>
+                <button id="recoverBtn">Enviar código</button>
+                <p id="recoverMsg"></p>
+
+                <div id="codeSection" style="display:none;">
+                    <p>Ingresa el código recibido:</p>
+                    <input type="number" id="codeInput" placeholder="Solo números" required>
+                    <button id="verifyBtn">Verificar código</button>
+                    <p id="verifyMsg"></p>
+                </div>
+
+                <button id="backBtn" style="background-color: gray;">Regresar al inicio</button>
+            </section>
+        </div>
+
+        <div class="illustration"></div>
+    </div>
+
+<script>
+    const loginSection = document.getElementById('loginSection');
+    const recoverSection = document.getElementById('recoverSection');
+    const loader = document.getElementById('loader');
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+    // ❌ ELIMINADO: validEmail y validPassword
+
+    function toggleTheme() {
+        body.classList.toggle('dark-mode');
+        const isDarkMode = body.classList.contains('dark-mode');
+        themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        body.classList.add('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    themeToggle.addEventListener('click', toggleTheme);
+
+    // ✅ MODIFICADO: Validación del login desde login.php
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+
+        emailError.textContent = "";
+        passwordError.textContent = "";
+
+        if (!email.includes('@')) {
+            emailError.textContent = "Ingresa un correo válido con @";
+            return;
+        }
+
+        loader.style.display = 'flex';
+
+        try {
+            const response = await fetch('login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    correo: email,
+                    contraseña: password
+                })
+            });
+
+            const data = await response.json();
+            loader.style.display = 'none';
+
+            if (data.status === "ok") {
+                window.location.href = "ingreso.html";
+            } else {
+                passwordError.textContent = data.mensaje;
+            }
+
+        } catch (error) {
+            loader.style.display = 'none';
+            passwordError.textContent = "Error del servidor";
+            console.error(error);
+        }
+    });
+
+    // 🔁 Lo demás no lo tocamos: recuperación de contraseña
+    document.getElementById('forgotPassword').addEventListener('click', function(e) {
+        e.preventDefault();
+        loginSection.style.display = 'none';
+        recoverSection.style.display = 'block';
+    });
+
+    document.getElementById('recoverBtn').addEventListener('click', function() {
+        const email = document.getElementById('recoverEmail').value.trim();
+        const recoverMsg = document.getElementById('recoverMsg');
+
+        if (!email.includes('@')) {
+            recoverMsg.textContent = "Ingresa un correo válido con @";
+            return;
+        }
+
+        recoverMsg.textContent = "Código enviado al correo (simulado: 1234)";
+        document.getElementById('codeSection').style.display = 'block';
+    });
+
+    document.getElementById('verifyBtn').addEventListener('click', function() {
+        const code = document.getElementById('codeInput').value.trim();
+        const verifyMsg = document.getElementById('verifyMsg');
+
+        if (code === "1234") {
+            verifyMsg.textContent = "Código verificado ✅. Tu contraseña es: 123456";
+        } else {
+            verifyMsg.textContent = "Código incorrecto. Intenta nuevamente.";
+        }
+    });
+
+    document.getElementById('backBtn').addEventListener('click', function() {
+        recoverSection.style.display = 'none';
+        loginSection.style.display = 'block';
+    });
+</script>
+
+    
+
+</body>
+</html>

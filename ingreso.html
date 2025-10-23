@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Acceso Profesores 🎓</title>
+  <style>
+    /* ===== VARIABLES DE COLOR ===== */
+    :root {
+      --guinda: rgba(128, 0, 32, 0.9);
+      --guinda-suave: rgba(128, 0, 32, 0.7);
+      --guinda-trans: rgba(128, 0, 32, 0.25);
+      --blanco-trans: rgba(255, 255, 255, 0.9);
+      --gris-claro: #f8f9fa;
+      --texto: #2f3640;
+      --overlay: linear-gradient(to bottom right, rgba(128, 0, 32, 0.65), rgba(0, 0, 0, 0.6));
+    }
+
+    body.dark-mode {
+      --guinda: rgba(188, 50, 80, 0.9);
+      --guinda-suave: rgba(188, 50, 80, 0.7);
+      --guinda-trans: rgba(188, 50, 80, 0.3);
+      --blanco-trans: rgba(30, 30, 30, 0.9);
+      --gris-claro: #222;
+      --texto: #f5f5f5;
+      --overlay: linear-gradient(to bottom right, rgba(0, 0, 0, 0.75), rgba(128, 0, 32, 0.6));
+    }
+
+    /* ===== FONDO ===== */
+    body {
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      overflow-x: hidden;
+      margin: 0;
+      padding-top: 140px;
+      background: url('fondo.png') no-repeat center center fixed;
+      background-size: cover;
+      transition: background 0.5s ease-in-out;
+    }
+
+    .background-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--overlay);
+      backdrop-filter: blur(5px);
+      z-index: -1;
+      transition: all 0.6s ease;
+    }
+
+    /* ===== BANNERS ===== */
+    .banner-large {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+      background-color: var(--guinda);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 25px;
+      font-size: 28px;
+      font-weight: 600;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+      transition: background-color 0.3s ease;
+    }
+
+    .banner-large img {
+      height: 70px;
+      margin-right: 15px;
+      border-radius: 12px;
+    }
+
+    .banner-small {
+      position: fixed;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background-color: var(--guinda-suave);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 999;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+      text-transform: uppercase;
+      transition: background-color 0.3s ease;
+    }
+
+    /* ===== BOTÓN MODO OSCURO ===== */
+    #themeToggle {
+      position: fixed;
+      top: 20px;
+      right: 25px;
+      background: var(--blanco-trans);
+      color: var(--guinda);
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all 0.4s ease;
+      z-index: 1001;
+    }
+
+    #themeToggle:hover {
+      transform: rotate(20deg) scale(1.1);
+      background: var(--guinda);
+      color: white;
+    }
+
+    /* ===== CONTENEDOR PRINCIPAL ===== */
+    .contenedor {
+      background: var(--blanco-trans);
+      backdrop-filter: blur(14px);
+      padding: 3rem 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 40px;
+      animation: fadeIn 1s ease-in-out;
+      transition: all 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== TÍTULO Y LOGO ===== */
+    h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--guinda);
+      font-size: 2.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      flex-direction: column;
+    }
+
+    h2 img {
+      height: 200px;
+      width: 200px;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.4s ease;
+    }
+
+    h2 img:hover {
+      transform: scale(1.05);
+    }
+
+    /* ===== FORMULARIO ===== */
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: var(--texto);
+      transition: color 0.3s ease;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 0.9rem;
+      margin-top: 0.5rem;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--guinda);
+      box-shadow: 0 0 10px rgba(128,0,32,0.3);
+      background-color: #fff;
+    }
+
+    /* ===== BOTÓN PRINCIPAL ===== */
+    button {
+      background: linear-gradient(90deg, var(--guinda), rgba(128,0,32,0.7));
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      border: none;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(90deg, rgba(128,0,32,0.9), #794646);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    /* ===== INFO PROFESOR ===== */
+    .info-profe {
+      background: #f2f5ff;
+      border-left: 5px solid var(--guinda);
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 10px;
+      color: var(--texto);
+      transition: all 0.3s ease;
+    }
+
+    .oculto { display: none; }
+
+    .error {
+      color: #d32f2f;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 650px) {
+      .contenedor {
+        padding: 2rem 1.2rem;
+        width: 95%;
+      }
+      h2 { font-size: 2rem; }
+      h2 img { height: 80px; width: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fondo translúcido -->
+  <div class="background-overlay"></div>
+
+  <!-- ===== BOTÓN CAMBIO DE TEMA ===== -->
+  <button id="themeToggle" title="Cambiar tema">🌙</button>
+
+  <!-- ===== BANNERS ===== -->
+  <div class="banner-large">
+    <img src="fondoo1.png" alt="Logo">
+    LUCEVAL
+  </div>
+  <div class="banner-small">Plataforma Educativa</div>
+
+  <!-- ===== CONTENEDOR ===== -->
+  <div class="contenedor">
+    <h2>
+      Acceso Profesores
+      <img src="fondoo1.png" alt="Logo Central">
+    </h2>
+
+    <label for="matricula">Matrícula del profesor:</label>
+    <input type="text" id="matricula" placeholder="Ej. ABC123" />
+    <div id="errorMatricula" class="error oculto">❌ Matrícula no válida</div>
+
+    <div id="infoProfesor" class="info-profe oculto"></div>
+
+    <div id="gradoContainer" class="oculto">
+      <label for="grado">Selecciona el grado:</label>
+      <select id="grado"></select>
+    </div>
+
+    <div id="carreraContainer" class="oculto">
+      <label for="carrera">Selecciona la carrera:</label>
+      <select id="carrera"></select>
+    </div>
+
+    <div id="materiaContainer" class="oculto">
+      <label for="materia">Selecciona la materia:</label>
+      <select id="materia"></select>
+    </div>
+
+    <button id="btnContinuar" class="oculto">Continuar ➡️</button>
+  </div>
+
+ <script>
+  // ======= LÓGICA PRINCIPAL =======
+  const profesores = {
+    "12345": {
+      nombre: "Marysol Gutierrez Solares",
+      grados: {
+        "5° A": { carrera: "Programación", materias: ["Implementa Software", "Codifica Software", "Socioemocional"] },
+        "3° A": { carrera: "Programación", materias: ["Métodos", "Implementa", "Administración"] }
+      }
+    },
+    "ABC678": {
+      nombre: "Luis Hernández Torres",
+      grados: {
+        "4° B": { carrera: "Contabilidad", materias: ["Contabilidad II", "Economía", "Socioemocional"] },
+        "2° B": { carrera: "Contabilidad", materias: ["Contabilidad I", "Matemáticas Financieras", "Administración"] }
+      }
+    }
+  };
+
+  const matriculaInput = document.getElementById('matricula');
+  const errorMatricula = document.getElementById('errorMatricula');
+  const infoProfesor = document.getElementById('infoProfesor');
+  const gradoContainer = document.getElementById('gradoContainer');
+  const carreraContainer = document.getElementById('carreraContainer');
+  const materiaContainer = document.getElementById('materiaContainer');
+  const btnContinuar = document.getElementById('btnContinuar');
+  const gradoSelect = document.getElementById('grado');
+  const carreraSelect = document.getElementById('carrera');
+  const materiaSelect = document.getElementById('materia');
+
+  let profesorActual = null;
+
+  matriculaInput.addEventListener('input', () => {
+    const matricula = matriculaInput.value.trim();
+    if (profesores[matricula]) {
+      profesorActual = profesores[matricula];
+      errorMatricula.classList.add('oculto');
+      infoProfesor.innerHTML = `<p><strong>Profesor:</strong> ${profesorActual.nombre}</p><p><strong>Matrícula:</strong> ${matricula}</p>`;
+      infoProfesor.classList.remove('oculto');
+      gradoSelect.innerHTML = `<option value="">-- Selecciona --</option>`;
+      Object.keys(profesorActual.grados).forEach(grado => {
+        const opt = document.createElement('option');
+        opt.value = grado;
+        opt.textContent = grado;
+        gradoSelect.appendChild(opt);
+      });
+      gradoContainer.classList.remove('oculto');
+      carreraContainer.classList.add('oculto');
+      materiaContainer.classList.add('oculto');
+      btnContinuar.classList.add('oculto');
+    } else {
+      profesorActual = null;
+      errorMatricula.classList.remove('oculto');
+      infoProfesor.classList.add('oculto');
+      gradoContainer.classList.add('oculto');
+      carreraContainer.classList.add('oculto');
+      materiaContainer.classList.add('oculto');
+      btnContinuar.classList.add('oculto');
+    }
+  });
+
+  gradoSelect.addEventListener('change', () => {
+    const gradoSeleccionado = gradoSelect.value;
+    if (gradoSeleccionado !== "") {
+      const datos = profesorActual.grados[gradoSeleccionado];
+      carreraSelect.innerHTML = `<option value="${datos.carrera}">${datos.carrera}</option>`;
+      carreraContainer.classList.remove('oculto');
+      materiaSelect.innerHTML = `<option value="">-- Selecciona --</option>`;
+      datos.materias.forEach(materia => {
+        const opt = document.createElement('option');
+        opt.value = materia;
+        opt.textContent = materia;
+        materiaSelect.appendChild(opt);
+      });
+      materiaContainer.classList.remove('oculto');
+      btnContinuar.classList.add('oculto');
+    } else {
+      carreraContainer.classList.add('oculto');
+      materiaContainer.classList.add('oculto');
+      btnContinuar.classList.add('oculto');
+    }
+  });
+
+  materiaSelect.addEventListener('change', () => {
+    btnContinuar.classList.toggle('oculto', materiaSelect.value === "");
+  });
+
+  btnContinuar.addEventListener('click', async (event) => {
+    event.preventDefault(); // Evitar recarga de página si el botón está dentro de un formulario
+
+    const matricula = matriculaInput.value.trim();
+    const grado = gradoSelect.value;
+    const carrera = carreraSelect.value;
+    const materia = materiaSelect.value;
+    const nombre = profesorActual?.nombre || "Desconocido";
+
+    const datos = {
+      matricula,
+      nombre,
+      grado,
+      carrera,
+      materia
+    };
+
+    try {
+      const res = await fetch('guardar_datos.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+
+      const respuesta = await res.json();
+
+      if (respuesta.status === 'ok') {
+        window.location.href = `evaluacion.html?matricula=${matricula}&grado=${encodeURIComponent(grado)}&carrera=${encodeURIComponent(carrera)}&materia=${encodeURIComponent(materia)}`;
+      } else {
+        alert("❌ Error al guardar los datos: " + respuesta.mensaje);
+        console.error(respuesta);
+      }
+    } catch (err) {
+      alert("❌ No se pudo conectar con el servidor.");
+      console.error(err);
+    }
+  });
+
+  // ======= MODO OSCURO =======
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+  });
+</script>
+
+
+</body>
+</html>
